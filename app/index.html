@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Second Brain</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">SB</div>
+          <div>
+            <p class="eyebrow">Work Memory Agent</p>
+            <h1>Second Brain</h1>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Views">
+          <button class="nav-item active" data-view="today" type="button">
+            <span aria-hidden="true">!</span>
+            Today
+          </button>
+          <button class="nav-item" data-view="review" type="button">
+            <span aria-hidden="true">@</span>
+            Email Review
+          </button>
+          <button class="nav-item" data-view="memory" type="button">
+            <span aria-hidden="true">#</span>
+            Memory
+          </button>
+          <button class="nav-item" data-view="settings" type="button">
+            <span aria-hidden="true">*</span>
+            Settings
+          </button>
+        </nav>
+
+        <div class="sidebar-panel">
+          <p class="panel-label">Scan window</p>
+          <div class="segmented" role="group" aria-label="Scan window">
+            <button class="segment active" data-window="7" type="button">7d</button>
+            <button class="segment" data-window="14" type="button">14d</button>
+            <button class="segment" data-window="30" type="button">30d</button>
+          </div>
+        </div>
+
+        <div class="sidebar-panel status-panel">
+          <p class="panel-label">Gmail status</p>
+          <div class="connection-row">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>Mock data connected</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="currentDate">Today</p>
+            <h2 id="viewTitle">Today</h2>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-box" id="searchBox">
+              <span class="sr-only">Search threads</span>
+              <input id="searchInput" type="search" placeholder="Search people, subjects, projects" />
+            </label>
+            <button class="primary-button" id="notifyButton" type="button">Enable Alerts</button>
+          </div>
+        </header>
+
+        <section class="view active" id="todayView" aria-labelledby="viewTitle">
+          <div class="metrics-grid" id="metricsGrid"></div>
+          <div class="workspace-grid">
+            <section class="work-column">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Highest priority</p>
+                  <h3>Needs Attention</h3>
+                </div>
+                <button class="ghost-button" id="simulateAlert" type="button">Test Alert</button>
+              </div>
+              <div class="thread-list" id="urgentList"></div>
+            </section>
+
+            <section class="work-column secondary-column">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Memory queue</p>
+                  <h3>Follow Up</h3>
+                </div>
+              </div>
+              <div class="thread-list compact" id="followUpList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="reviewView" aria-labelledby="viewTitle">
+          <div class="toolbar">
+            <div class="tabs" role="tablist" aria-label="Email categories">
+              <button class="tab active" data-filter="All" type="button">All</button>
+              <button class="tab" data-filter="Needs Reply" type="button">Needs Reply</button>
+              <button class="tab" data-filter="Follow Up" type="button">Follow Up</button>
+              <button class="tab" data-filter="Waiting On Them" type="button">Waiting</button>
+              <button class="tab" data-filter="Due Soon" type="button">Due Soon</button>
+            </div>
+            <label class="toggle-row">
+              <input id="hideDoneToggle" type="checkbox" checked />
+              Hide done
+            </label>
+          </div>
+          <div class="thread-list review-list" id="reviewList"></div>
+        </section>
+
+        <section class="view" id="memoryView" aria-labelledby="viewTitle">
+          <div class="memory-layout">
+            <section>
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Personal signals</p>
+                  <h3>Learned Memory</h3>
+                </div>
+                <button class="ghost-button" id="resetMemory" type="button">Reset</button>
+              </div>
+              <div class="memory-grid" id="memoryGrid"></div>
+            </section>
+            <section>
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Recent corrections</p>
+                  <h3>Feedback Log</h3>
+                </div>
+              </div>
+              <div class="feedback-log" id="feedbackLog"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settingsView" aria-labelledby="viewTitle">
+          <div class="settings-grid">
+            <section class="settings-section">
+              <p class="eyebrow">Connection</p>
+              <h3>Gmail</h3>
+              <p class="muted">This prototype uses mock Gmail data. The next milestone replaces it with Gmail OAuth and recent thread fetching.</p>
+              <button class="primary-button disabled" type="button" aria-disabled="true">Connect Gmail Coming Soon</button>
+            </section>
+
+            <section class="settings-section">
+              <p class="eyebrow">Notifications</p>
+              <h3>Alert Rules</h3>
+              <label class="toggle-row">
+                <input type="checkbox" checked />
+                Immediate alerts for urgent items
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" checked />
+                Daily overview at 8:30 AM
+              </label>
+              <label class="toggle-row">
+                <input type="checkbox" checked />
+                Follow-up nudges after quiet threads
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <p class="eyebrow">Privacy</p>
+              <h3>Storage Rules</h3>
+              <ul class="check-list">
+                <li>Never send emails automatically</li>
+                <li>Store summaries and action items, not full email bodies long term</li>
+                <li>Let the user inspect and delete learned memory</li>
+              </ul>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

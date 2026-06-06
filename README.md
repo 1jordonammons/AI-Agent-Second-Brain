@@ -58,6 +58,32 @@ For version one:
 5. Reminders, snooze, daily overview, and immediate alerts
 6. Safari-friendly surface such as a Safari extension, Mac menu-bar app, or persistent desktop notification surface
 
+## Current Prototype
+
+The first static dashboard prototype lives in `app/`.
+
+It includes:
+
+- Today, Email Review, Memory, and Settings views
+- Mock Gmail thread data
+- Priority scoring and category labels
+- Search and category filters
+- Feedback actions for Important, Done, Remind Later, and Not Important
+- Learned memory and feedback log state using browser local storage
+- Browser notification permission and test alert controls
+
+To run it locally:
+
+```sh
+python3 -m http.server 4173 --directory app
+```
+
+Then open:
+
+```text
+http://localhost:4173
+```
+
 ## Blueprint
 
 The full MVP blueprint is here:

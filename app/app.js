@@ -117,11 +117,13 @@ const els = {
   urgentList: document.querySelector("#urgentList"),
   followUpList: document.querySelector("#followUpList"),
   reviewList: document.querySelector("#reviewList"),
+  trainingSummary: document.querySelector("#trainingSummary"),
   memoryGrid: document.querySelector("#memoryGrid"),
   feedbackLog: document.querySelector("#feedbackLog"),
   search: document.querySelector("#searchInput"),
   searchBox: document.querySelector("#searchBox"),
   hideDone: document.querySelector("#hideDoneToggle"),
+  importFile: document.querySelector("#importFile"),
   toast: document.querySelector("#toast")
 };
 
@@ -138,6 +140,24 @@ function save() {
   localStorage.setItem("secondBrainThreads", JSON.stringify(state.threads));
   localStorage.setItem("secondBrainMemory", JSON.stringify(state.memory));
   localStorage.setItem("secondBrainFeedback", JSON.stringify(state.feedback));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function uniquePush(list, value) {
+  const cleaned = String(value || "").trim();
+  if (!cleaned) return false;
+  const exists = list.some((item) => item.toLowerCase() === cleaned.toLowerCase());
+  if (exists) return false;
+  list.unshift(cleaned);
+  return true;
 }
 
 function todayLabel() {
@@ -198,9 +218,13 @@ function categoryClass(category) {
   return "";
 }
 
+function actionButton(action, id, label, extraClass = "") {
+  return `<button class="action-button ${extraClass}" data-action="${action}" data-id="${escapeHtml(id)}" type="button">${label}</button>`;
+}
+
 function threadCard(thread, compact = false) {
   const pills = thread.categories
-    .map((category) => `<span class="pill ${categoryClass(category)}">${category}</span>`)
+    .map((category) => `<span class="pill ${categoryClass(category)}">${escapeHtml(category)}</span>`)
     .join("");
 
   return `
@@ -208,24 +232,27 @@ function threadCard(thread, compact = false) {
       <div class="thread-head">
         <div>
           <div class="sender-line">
-            <span class="sender">${thread.sender}</span>
-            <span class="pill">${thread.company}</span>
+            <span class="sender">${escapeHtml(thread.sender)}</span>
+            <span class="pill">${escapeHtml(thread.company)}</span>
           </div>
-          <div class="subject">${thread.subject}</div>
+          <div class="subject">${escapeHtml(thread.subject)}</div>
         </div>
-        <div class="score">${thread.score}</div>
+        <div class="score">${escapeHtml(thread.score)}</div>
       </div>
-      <p class="summary">${thread.summary}</p>
-      ${compact ? "" : `<p class="reason">${thread.reason}</p>`}
+      <p class="summary">${escapeHtml(thread.summary)}</p>
+      ${compact ? "" : `<p class="reason">${escapeHtml(thread.reason)}</p>`}
       <div class="pill-row">
         ${pills}
-        <span class="pill">${thread.due}</span>
+        <span class="pill">${escapeHtml(thread.due)}</span>
       </div>
       <div class="action-row">
-        <button class="action-button" data-action="important" data-id="${thread.id}" type="button">Important</button>
-        <button class="action-button" data-action="done" data-id="${thread.id}" type="button">Done</button>
-        <button class="action-button" data-action="snooze" data-id="${thread.id}" type="button">Remind Later</button>
-        <button class="action-button" data-action="not-important" data-id="${thread.id}" type="button">Not Important</button>
+        ${actionButton("important", thread.id, "Important")}
+        ${actionButton("done", thread.id, "Done")}
+        ${actionButton("snooze", thread.id, "Remind Later")}
+        ${actionButton("not-important", thread.id, "Not Important")}
+        ${actionButton("prioritize-sender", thread.id, "Prioritize Sender", "signal")}
+        ${actionButton("ignore-sender", thread.id, "Ignore Sender", "signal")}
+        ${actionButton("mark-project", thread.id, "This Is A Project", "signal")}
       </div>
     </article>
   `;
@@ -257,29 +284,60 @@ function renderReview() {
 
 function renderMemory() {
   const groups = [
-    ["Important People", state.memory.people],
-    ["Ignored Senders", state.memory.ignored],
-    ["Active Projects", state.memory.projects],
-    ["Priority Keywords", state.memory.keywords],
-    ["Low Priority", state.memory.lowPriority],
-    ["Reminder Rules", state.memory.reminders]
+    ["Important People", "people", state.memory.people],
+    ["Ignored Senders", "ignored", state.memory.ignored],
+    ["Active Projects", "projects", state.memory.projects],
+    ["Priority Keywords", "keywords", state.memory.keywords],
+    ["Low Priority", "lowPriority", state.memory.lowPriority],
+    ["Reminder Rules", "reminders", state.memory.reminders]
   ];
 
-  els.memoryGrid.innerHTML = groups.map(([title, items]) => `
+  const open = state.threads.filter((thread) => thread.status !== "done").length;
+  els.trainingSummary.innerHTML = `
+    <article class="training-stat">
+      <strong>${state.feedback.length}</strong>
+      <span class="muted">Feedback events</span>
+    </article>
+    <article class="training-stat">
+      <strong>${memoryCount()}</strong>
+      <span class="muted">Learned signals</span>
+    </article>
+    <article class="training-stat">
+      <strong>${open}</strong>
+      <span class="muted">Open thread states</span>
+    </article>
+  `;
+
+  els.memoryGrid.innerHTML = groups.map(([title, key, items]) => `
     <article class="memory-card">
-      <h3>${title}</h3>
-      <ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>
+      <h3>${escapeHtml(title)}</h3>
+      <div class="memory-list">
+        ${items.length ? items.map((item) => `
+          <span class="memory-chip">
+            ${escapeHtml(item)}
+            <button class="chip-remove" data-memory-remove="${key}" data-value="${escapeHtml(item)}" type="button" aria-label="Remove ${escapeHtml(item)}">x</button>
+          </span>
+        `).join("") : `<span class="muted">No rules yet.</span>`}
+      </div>
+      <form class="memory-form" data-memory-add="${key}">
+        <input type="text" placeholder="Add signal" aria-label="Add ${escapeHtml(title)} signal" />
+        <button class="ghost-button" type="submit">Add</button>
+      </form>
     </article>
   `).join("");
 
   els.feedbackLog.innerHTML = state.feedback.length
     ? state.feedback.slice(0, 8).map((item) => `
       <div class="feedback-item">
-        <strong>${item.action}</strong> on ${item.subject}<br />
-        <span>${item.time}</span>
+        <strong>${escapeHtml(item.label || item.action || "Feedback")}</strong> on ${escapeHtml(item.subject)}<br />
+        <span>${escapeHtml(item.signal || "Saved preference signal")} · ${escapeHtml(item.time)}</span>
       </div>
     `).join("")
     : `<div class="feedback-item">No corrections yet. Use the feedback buttons to train Second Brain.</div>`;
+}
+
+function memoryCount() {
+  return Object.values(state.memory).reduce((total, item) => total + item.length, 0);
 }
 
 function render() {
@@ -287,6 +345,26 @@ function render() {
   renderToday();
   renderReview();
   renderMemory();
+  bindActionButtons();
+}
+
+function bindActionButtons() {
+  document.querySelectorAll("[data-action]").forEach((button) => {
+    button.dataset.bound = "true";
+    button.addEventListener("pointerdown", () => runButtonAction(button));
+    button.addEventListener("click", () => runButtonAction(button));
+  });
+}
+
+function runButtonAction(button) {
+  const key = `${button.dataset.action}:${button.dataset.id}`;
+  const now = Date.now();
+  if (button.dataset.lastActionKey === key && now - Number(button.dataset.lastActionAt || 0) < 400) {
+    return;
+  }
+  button.dataset.lastActionKey = key;
+  button.dataset.lastActionAt = String(now);
+  handleAction(button.dataset.action, button.dataset.id);
 }
 
 function setView(view) {
@@ -301,52 +379,95 @@ function setView(view) {
   els.searchBox.classList.toggle("hidden", !["today", "review"].includes(view));
 }
 
-function addFeedback(action, thread) {
+function addFeedback(action, label, thread, signal, beforeScore, afterScore) {
   state.feedback.unshift({
+    id: `feedback-${Date.now()}`,
     action,
+    label,
+    threadId: thread.id,
+    sender: thread.sender,
+    company: thread.company,
     subject: thread.subject,
-    time: new Date().toLocaleString()
+    categories: thread.categories,
+    project: thread.project,
+    signal,
+    beforeScore,
+    afterScore,
+    time: new Date().toLocaleString(),
+    timestamp: new Date().toISOString()
   });
 }
 
 function updateMemory(action, thread) {
-  if (action === "important" && !state.memory.people.includes(thread.sender)) {
-    state.memory.people.unshift(thread.sender);
-  }
-  if (action === "not-important" && !state.memory.lowPriority.includes(thread.company)) {
-    state.memory.lowPriority.unshift(thread.company);
-  }
+  if (action === "important") uniquePush(state.memory.people, thread.sender);
+  if (action === "not-important") uniquePush(state.memory.lowPriority, thread.company);
+  if (action === "prioritize-sender") uniquePush(state.memory.people, thread.sender);
+  if (action === "ignore-sender") uniquePush(state.memory.ignored, thread.sender);
+  if (action === "mark-project") uniquePush(state.memory.projects, thread.project);
 }
 
 function handleAction(action, id) {
   const thread = state.threads.find((item) => item.id === id);
   if (!thread) return;
+  const beforeScore = thread.score;
+  let label = "";
+  let signal = "";
 
   if (action === "important") {
     thread.score = Math.min(100, thread.score + 8);
-    addFeedback("Marked important", thread);
+    label = "Marked important";
+    signal = "Boost similar senders, projects, and keywords.";
     updateMemory(action, thread);
     toast("Second Brain will prioritize similar work.");
   }
 
   if (action === "done") {
     thread.status = "done";
-    addFeedback("Marked done", thread);
+    label = "Marked done";
+    signal = "Close this action item and preserve the decision history.";
     toast("Marked done.");
   }
 
   if (action === "snooze") {
     thread.status = "snoozed";
-    addFeedback("Remind later", thread);
+    label = "Remind later";
+    signal = "Keep this item active but delay the reminder.";
     toast("Reminder moved to later today.");
   }
 
   if (action === "not-important") {
     thread.score = Math.max(5, thread.score - 18);
-    addFeedback("Marked not important", thread);
+    label = "Marked not important";
+    signal = "Lower similar senders, companies, or categories.";
     updateMemory(action, thread);
     toast("Second Brain will lower similar items.");
   }
+
+  if (action === "prioritize-sender") {
+    thread.score = Math.min(100, thread.score + 12);
+    label = "Always prioritize sender";
+    signal = `${thread.sender} added to important people.`;
+    updateMemory(action, thread);
+    toast(`${thread.sender} will be prioritized.`);
+  }
+
+  if (action === "ignore-sender") {
+    thread.score = Math.max(5, thread.score - 35);
+    label = "Ignore sender";
+    signal = `${thread.sender} added to ignored senders.`;
+    updateMemory(action, thread);
+    toast(`${thread.sender} will be ignored.`);
+  }
+
+  if (action === "mark-project") {
+    thread.score = Math.min(100, thread.score + 6);
+    label = "Marked as project";
+    signal = `${thread.project} added to active projects.`;
+    updateMemory(action, thread);
+    toast(`${thread.project} is now an active project.`);
+  }
+
+  addFeedback(action, label, thread, signal, beforeScore, thread.score);
 
   save();
   render();
@@ -383,6 +504,45 @@ function sendTestAlert() {
   toast(`${thread.sender}: ${thread.nextStep}`);
 }
 
+function exportTrainingData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: 1,
+    memory: state.memory,
+    feedbackEvents: state.feedback,
+    threadState: state.threads
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "second-brain-training-data.json";
+  link.click();
+  URL.revokeObjectURL(url);
+  toast("Training data exported.");
+}
+
+function importTrainingData(file) {
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const payload = JSON.parse(reader.result);
+      if (!payload.memory || !payload.feedbackEvents || !payload.threadState) {
+        throw new Error("Missing expected training data keys.");
+      }
+      state.memory = payload.memory;
+      state.feedback = payload.feedbackEvents;
+      state.threads = payload.threadState;
+      save();
+      render();
+      toast("Training data imported.");
+    } catch {
+      toast("That JSON file does not match the training data format.");
+    }
+  });
+  reader.readAsText(file);
+}
+
 document.addEventListener("click", (event) => {
   const nav = event.target.closest(".nav-item");
   if (nav) setView(nav.dataset.view);
@@ -402,12 +562,42 @@ document.addEventListener("click", (event) => {
     renderReview();
   }
 
-  const action = event.target.closest("[data-action]");
-  if (action) handleAction(action.dataset.action, action.dataset.id);
+  const remove = event.target.closest("[data-memory-remove]");
+  if (remove) {
+    const key = remove.dataset.memoryRemove;
+    const value = remove.dataset.value;
+    state.memory[key] = state.memory[key].filter((item) => item !== value);
+    save();
+    renderMemory();
+    toast("Memory signal removed.");
+  }
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-memory-add]");
+  if (!form) return;
+  event.preventDefault();
+  const input = form.querySelector("input");
+  const key = form.dataset.memoryAdd;
+  if (uniquePush(state.memory[key], input.value)) {
+    input.value = "";
+    save();
+    renderMemory();
+    toast("Memory signal added.");
+  } else {
+    toast("That signal is already saved.");
+  }
 });
 
 document.querySelector("#notifyButton").addEventListener("click", enableNotifications);
 document.querySelector("#simulateAlert").addEventListener("click", sendTestAlert);
+document.querySelector("#exportData").addEventListener("click", exportTrainingData);
+document.querySelector("#importData").addEventListener("click", () => els.importFile.click());
+els.importFile.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (file) importTrainingData(file);
+  event.target.value = "";
+});
 document.querySelector("#resetMemory").addEventListener("click", () => {
   state.memory = structuredClone(defaultMemory);
   state.feedback = [];

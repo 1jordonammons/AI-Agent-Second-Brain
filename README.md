@@ -69,6 +69,10 @@ It includes:
 - Priority scoring and category labels
 - Search and category filters
 - Feedback actions for Important, Done, Remind Later, and Not Important
+- Structured feedback events for model-training signals
+- Sender, project, keyword, category, and reminder memory
+- Editable learned memory chips
+- Training-data export and import using JSON
 - Learned memory and feedback log state using browser local storage
 - Browser notification permission and test alert controls
 

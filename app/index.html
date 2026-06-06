@@ -122,6 +122,7 @@
                 </div>
                 <button class="ghost-button" id="resetMemory" type="button">Reset</button>
               </div>
+              <div class="training-summary" id="trainingSummary"></div>
               <div class="memory-grid" id="memoryGrid"></div>
             </section>
             <section>
@@ -170,6 +171,17 @@
                 <li>Store summaries and action items, not full email bodies long term</li>
                 <li>Let the user inspect and delete learned memory</li>
               </ul>
+            </section>
+
+            <section class="settings-section">
+              <p class="eyebrow">Training Data</p>
+              <h3>Memory Backup</h3>
+              <p class="muted">Export or import the local memory profile, feedback events, and prototype thread state.</p>
+              <div class="button-row">
+                <button class="ghost-button" id="exportData" type="button">Export JSON</button>
+                <button class="ghost-button" id="importData" type="button">Import JSON</button>
+              </div>
+              <input class="sr-only" id="importFile" type="file" accept="application/json" />
             </section>
           </div>
         </section>

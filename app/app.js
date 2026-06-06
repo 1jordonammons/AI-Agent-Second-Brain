@@ -150,7 +150,6 @@ function todayLabel() {
 }
 
 function visibleThreads() {
-  const query = state.search.trim().toLowerCase();
   return state.threads
     .filter((thread) => !state.hideDone || thread.status !== "done")
     .filter((thread) => state.filter === "All" || thread.categories.includes(state.filter))

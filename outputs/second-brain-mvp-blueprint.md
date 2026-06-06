@@ -298,4 +298,3 @@ Make Second Brain visible where the user naturally works.
 Start with Milestone 1: a polished static dashboard using mock Gmail data.
 
 This avoids OAuth complexity at the beginning and lets us design the actual experience first. Once the dashboard feels right, connect Gmail and replace mock data with real threads.
-
